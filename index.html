@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>Title</title>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <style>
+    body {
+      user-select: none;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas onclick="b=1" id="canvas"></canvas>
+  <button onclick="easy()">Лёгкий</button>
+  <button onclick="normal()">Средний</button>
+  <button onclick="hard()">Сложный</button>
+  <button onclick="insane()">Разрывающий</button>
+  <button onclick="impossible()">Даже не пытайся</button>
+  <div id="app">
+    <h3>{{time5}} {{time4}} {{time3}} {{time2}} {{time1}}</h3>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <script>
+    // Константы 
+    canvas.width = innerWidth;
+    canvas.height = 500;
+    ctx = canvas.getContext("2d");
+    const road = 100;
+    const line = 40;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const trap = 2;
+    const car = 3;
+
+    const size_enemyy = 40
+    const size_enemyx = 40
+
+    const size_bulletx = 40;
+    const size_bullety = 5;
+    const count_shot = 10;
+    //переменные
+    var b = 0;
+    var r = 0;
+    var a = 0;
+    var count_enemy = localStorage.getItem('count_enemy');
+    var max_speed = localStorage.getItem('max_speed');
+    var count_bullet = localStorage.getItem('count_bullet');
+    var c = []
+    c[0] = 0
+    c[1] = 0
+    var gamespeed = localStorage.getItem('gamespeed');
+    //Изображения
+    let roadimg = new Image();
+    roadimg.src = "Снимок.PNG"
+
+    // система уровней сложностей
+    function easy() {
+      localStorage.setItem('count_enemy', 5);
+      localStorage.setItem('max_speed', 5);
+      localStorage.setItem('count_bullet', 5);
+      localStorage.setItem('gamespeed', 5);
+      window.location.reload();
+    }
+    function normal() {
+      localStorage.setItem('count_enemy', 7);
+      localStorage.setItem('max_speed', 7);
+      localStorage.setItem('count_bullet', 7);
+      localStorage.setItem('gamespeed', 7);
+      window.location.reload();
+    }
+    function hard() {
+      localStorage.setItem('count_enemy', 10);
+      localStorage.setItem('max_speed', 10);
+      localStorage.setItem('count_bullet', 10);
+      localStorage.setItem('gamespeed', 10);
+      window.location.reload();
+    }
+    function impossible() {
+      localStorage.setItem('count_enemy', 30);
+      localStorage.setItem('max_speed', 30);
+      localStorage.setItem('count_bullet', 30);
+      localStorage.setItem('gamespeed', 30);
+      window.location.reload();
+    }
+    function insane() {
+      localStorage.setItem('count_enemy', 15);
+      localStorage.setItem('max_speed', 15);
+      localStorage.setItem('count_bullet', 15);
+      localStorage.setItem('gamespeed', 15);
+      window.location.reload();
+    }
+
+
+    //Персонаж
+    char = {
+      move: 'right',
+      x: [],
+      y: [],
+      sizex: 25,
+      sizey: 25,
+    }
+    char.x[0] = 0;
+    char.y[0] = 0;
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    class ENEMY {
+      x;
+      y;
+      speed;
+      constructor() {
+        this.change()
+      }
+      change() {
+        this.x = w;
+        r = rand(0, h - size_enemyy)
+        this.y = r;
+        r = rand(1, max_speed)
+        this.speed = r;
+      }
+    }
+
+
+    enemy = [];
+    for (i = 0; i < count_enemy; i++) {
+      enemy[i] = new ENEMY();
+    }
+
+
+    class BULLET {
+      x;
+      y;
+      speed;
+      constructor() {
+        this.shot()
+      }
+      shot() {
+        r = rand(0, count_enemy - 1)
+        this.x = enemy[r].x;
+        this.y = enemy[r].y + size_enemyy / 2;
+
+        this.speed = 10;
+      }
+    }
+    bullet = [];
+    for (i = 0; i < count_enemy; i++) {
+      bullet[i] = new BULLET();
+
+    }
+
+    class GUN {
+      x;
+      y;
+      speed;
+      constructor() {
+        this.shooting()
+      }
+      shooting() {
+        this.x = char.x[0];
+
+        this.y = char.y[0] + char.sizey / 2;
+
+        this.speed = 10;
+      }
+    }
+    gun = []
+    for (i = 0; i < count_shot; i++) {
+      gun[i] = new GUN();
+      gun[i].x = w;
+      gun[i].y = h;
+    }
+
+
+    // Vue счётчик
+    var app = new Vue({
+      el: "#app",
+      data: {
+        time1: 0,
+        time2: 0,
+        time3: 0,
+        time4: 0,
+        time5: 0,
+      },
+      methods: {
+        onetime(){
+          this.time1++;
+          if(this.time1==10) {
+            this.time1=0;
+            this.time2++;
+            if(this.time2==10) {
+              this.time2=0;
+              this.time3++;
+              if(this.time3==10) {
+                this.time3=0;
+                this.time4++;
+                if(this.time4==10) {
+                  this.time4=0;
+                  this.time5++;
+                  if(this.time5==10) {
+                    alert('Ничего себе ты долго держишься. Мой счётчик на такое не был готов, так что считай что ты выиграл')
+                  }
+                }
+              }
+            }
+          }
+          
+        }
+      }
+    })
+
+
+
+
+    //Заполнение поля 
+    function land() {
+      ctx.drawImage(roadimg, 0 - c[0], 0, w, h)
+      c[0]+=Number(gamespeed)
+      if (c[0] >= w) {
+        c[0] = 0
+      }
+      ctx.drawImage(roadimg, w - c[1], 0, w, h)
+      c[1]+=Number(gamespeed)
+      if (c[1] >= w) {
+        c[1] = 0
+      }
+      
+      //игрок
+      ctx.fillStyle = "rgba(255, 25, 25)"
+      ctx.fillRect(char.x[0], char.y[0], char.sizex, char.sizey)
+
+      //враги
+
+      for (i = 0; i < count_enemy; i++) { //отрисовочка
+        ctx.fillStyle = "rgba(130, 130, 255)"
+        ctx.fillRect(enemy[i].x, enemy[i].y, size_enemyx, size_enemyy)
+
+        if (char.x[0] + char.sizex >= enemy[i].x && char.x[0] <= enemy[i].x + size_enemyx) {
+          if (char.y[0] + char.sizey >= enemy[i].y && char.y[0] <= enemy[i].y + size_enemyy) {
+            window.location.reload()
+          }
+        }
+
+
+        //скорость врагов и границы
+        enemy[i].x -= enemy[i].speed;
+        if (enemy[i].x + 100 < 0) {
+          enemy[i].change()
+        }
+
+
+
+
+
+
+        // код, что бы враги не появлялись в друг-друге
+        for (j = 0; j < count_enemy; j++) {
+          for (l = 0; l < count_enemy; l++) {
+            for (u = 0; u < size_enemyy; u++) {
+
+
+              if (enemy[j].y + u == enemy[l].y) {
+                if (l != j) {
+                  if (enemy[l].x == w) {
+                    enemy[l].change()
+                  }
+                  if (enemy[j].x == w)
+                    enemy[j].change()
+                }
+
+              }
+            }
+
+          }
+
+        }
+      }
+      //Система стрельбы персонажа
+      for (i = 0; i < count_shot; i++) {
+
+        if (b == 1) {
+          gun[a].shooting()
+          b = 0
+          a++
+          if (a == count_shot) {
+            a = 0;
+          }
+        }
+
+
+        ctx.fillStyle = "rgb(200, 0, 0)"
+        ctx.fillRect(gun[i].x, gun[i].y, 40, 5)
+        gun[i].x += gun[i].speed
+        for (j = 0; j < count_enemy; j++) {
+          if (gun[i].x + 40 >= enemy[j].x && gun[i].x <= enemy[j].x + size_enemyx) {
+            if (gun[i].y + 5 >= enemy[j].y && gun[i].y <= enemy[j].y + size_enemyy) {
+              enemy[j].change()
+            }
+          }
+        }
+      }
+      //Система стрельбы врагов
+      for (i = 0; i < count_bullet; i++) {
+        ctx.fillStyle = "rgba(255, 255, 0)"
+        ctx.fillRect(bullet[i].x, bullet[i].y, 40, 5)
+        bullet[i].x -= bullet[i].speed
+        if (bullet[i].x + 500 < 0) {
+          bullet[i].shot()
+        }
+        if (char.x[0] + char.sizex >= bullet[i].x && char.x[0] <= bullet[i].x + size_bulletx) {
+          if (char.y[0] + char.sizey >= bullet[i].y && char.y[0] <= bullet[i].y + size_bullety) {
+            window.location.reload()
+          }
+        }
+      }
+
+
+      //движение игрока 
+
+      if (char.move == 'right') char.x[0] += 3;
+
+
+
+      if (char.move == 'left') char.x[0] -= 7;
+
+
+
+      if (char.move == 'down') char.y[0] += 5;
+
+
+
+      if (char.move == 'up') char.y[0] -= 5;
+
+      //Система анти-ухода за границы 
+      if (char.x[0] <= 0) {
+        char.x[0] = 0
+      }
+      if (char.x[0] >= w - char.sizex) {
+        char.x[0] = w - char.sizex
+      }
+      if (char.y[0] <= 0) {
+        char.y[0] = 0
+      }
+      if (char.y[0] >= h - char.sizey) {
+        char.y[0] = h - char.sizey
+      }
+
+      
+
+
+      setTimeout(() => {
+        requestAnimationFrame(land)
+
+      }, 1);
+    }
+    land()
+    
+
+
+
+    //обработка нажатий
+    document.addEventListener("keydown", e => {
+      if (e.code == "KeyS") char.move = 'down'
+      if (e.code == "KeyA") char.move = 'left'
+      if (e.code == "KeyD") char.move = 'right'
+      if (e.code == "KeyW") char.move = 'up'
+    })
+    document.addEventListener("keyup", e => {
+      if (e.code == "Space") {
+        b = 1
+
+      }
+    })
+
+    let timerId = setInterval(() => app.onetime(), 100);
+
+  </script>
+</body>
+
+</html>
